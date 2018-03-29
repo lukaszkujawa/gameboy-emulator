@@ -9,13 +9,20 @@ clean:
 	rm ${TARGET}/*.o
 	rm ${BINDIR}/*
 
-emulator:
-	${CC} -c ${SRC}/emulator.c -o ${TARGET}/emulator.o
+cpu:
+	${CC} -c ${SRC}/cpu.c -o ${TARGET}/cpu.o
 
 disassm:
 	${CC} -c ${SRC}/disassm.c -o ${TARGET}/disassm.o
 
-disassm_bin:
-	${CC} ${TARGET}/disassm.o ${TARGET}/emulator.o -o ${BINDIR}/disassm
+emulator:
+	${CC} -c ${SRC}/emulator.c -o ${TARGET}/emulator.o
 
-all: emulator disassm disassm_bin
+disassm_bin:
+	${CC} ${TARGET}/disassm.o ${TARGET}/cpu.o -o ${BINDIR}/disassm
+
+emulator_bin:
+	${CC} ${TARGET}/emulator.o ${TARGET}/cpu.o -o ${BINDIR}/emulator
+
+
+all: cpu disassm disassm_bin emulator emulator_bin

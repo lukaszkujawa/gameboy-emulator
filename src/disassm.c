@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "emulator.h"
+#include "cpu.h"
 
 int main(int argc, char *argv[]){
 	if(argc != 2) {
@@ -10,56 +10,44 @@ int main(int argc, char *argv[]){
 
 	gb_init();
 	gb_load_rom(argv[1]);
+
+	printf("---------------\n");
+	printf("Title: %s\n", ROM_HEADER->title);
+	printf("Color: $%02x (%s)\n", ROM_HEADER->color, ROM_HEADER->color == 0x80 ? "Yes" : "No");
+	printf("Device: $%02x (%s)\n", ROM_HEADER->device, ROM_HEADER->device == 0x00 ? "GameBoy": "Super GameBoy");
+	printf("ROM size: $%02x (%d KByte)\n", ROM_HEADER->rom_size, 32 << ROM_HEADER->rom_size);
+	printf("RAM size: $%02x (%d KByte)\n", ROM_HEADER->ram_size, 2 << ( 2 * ROM_HEADER->ram_size));
+	printf("---------------\n");
+
+	short int *jumps = malloc(1024 * sizeof(short int));
+	short int jumps_index = 0;
 	
-	int i = 0x100;
+	int i = 0;
 
 	while(1) {
 		unsigned char op_code = GB_MEMORY[i];
 		unsigned char code_len = OPCODE_LEN[op_code];
-		unsigned char *line =  &GB_MEMORY[i];
-		short int value = 0;
-
-		printf("\t");
-		char str_buff[128];
-
-		switch(code_len) {
-			case 1:
-				printf("%-30s", OPCODE_STR[op_code]);
-				printf("; $%04x:\t$%02x\n", i, op_code);
-				break;
-			case 2:
-				if(op_code == 0x18 || op_code == 0x20 || op_code == 0x28 ||  op_code == 0x30 || op_code == 0x38 || op_code == 0xE8 || op_code == 0xF8 ) {
-					value = (char) line[1];
-				}
-				else {
-					value = line[1];
-				}
-				
-				
-				sprintf(str_buff, OPCODE_STR[op_code], value);
-				printf("%-30s", str_buff);
-				printf("; $%04x:\t$%02x $%02x\n", i, op_code, (unsigned char)line[1]);
-
-				break;
-			case 3:
-				value = ((line[2]) << 8) + line[1];
-				sprintf(str_buff, OPCODE_STR[op_code], value);
-				printf("%-30s", str_buff);
-				printf("; $%04x:\t$%02x $%02x $%02x\n", i, op_code, line[1], line[2]);
-				break;				
-			default:
-				printf("ERROR: unsupported instruction\n");
-				exit(-1);
-		}
-
-		//printf("0x%02hhX %d %d\n", ROM[i], op_code, code_len);
-		//printf("%x\n", instr);
+		gb_disassm_instr(i);
+		short int value = gb_instr_value(i);
 
 		switch(op_code) {
+			// JP
 			case 0xC3:
+				for(int i = 0 ; i < jumps_index ; i++) {
+					if(jumps[i] == value) {
+						printf(" ; going back to the same address $%02x\n", jumps[i] );
+						exit(0);
+					}
+				}
+
 				printf( "; --------------\n");
+				jumps[jumps_index] = value;
+				jumps_index++;
 				i = value;
 				break;
+			// CALL
+			case 0xCD:
+
 			default:
 				i+=code_len;
 		}
