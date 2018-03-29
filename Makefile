@@ -8,6 +8,12 @@ default_target: all
 clean:
 	rm ${TARGET}/*.o
 	rm ${BINDIR}/*
+	rmdir ${BINDIR}
+	rmdir ${TARGET}
+
+dirs:
+	mkdir -p ${BINDIR}
+	mkdir -p ${TARGET}	
 
 cpu:
 	${CC} -c ${SRC}/cpu.c -o ${TARGET}/cpu.o
@@ -25,4 +31,4 @@ emulator_bin:
 	${CC} ${TARGET}/emulator.o ${TARGET}/cpu.o -o ${BINDIR}/emulator
 
 
-all: cpu disassm disassm_bin emulator emulator_bin
+all: dirs cpu disassm disassm_bin emulator emulator_bin
