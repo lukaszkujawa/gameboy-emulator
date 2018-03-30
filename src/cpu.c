@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+
 #include "cpu.h"
+#include "time.h"
+
 
 string OPCODE_STR[0x100] = {
 	"nop", 		"ld bc, %d", 	"ld (bc), a", 	"inc bc", "inc b", 		"dec b", 	"ld b,%d", 		"rlca", 	"ld ($%04x),sp", 	"add hl,bc", 	"ld a,(bc)", 	"dec bc", 	"inc c", 	"dec c", 	"ld c, %d", 		"rrca",
@@ -76,9 +80,16 @@ void gb_reset() {
 
 
 void gb_run() {
-	unsigned char op_code = GB_MEMORY[CPU.reg_pc];
-	unsigned char code_len = OPCODE_LEN[op_code];
-
+	while(1) {
+		CPU.opcode = GB_MEMORY[CPU.r.pc];
+		gb_disassm_instr(CPU.r.pc);
+		GB_OPCODE_INSTR[CPU.opcode]();
+		gb_dump_cpu();
+		CPU.cycles_clock += CPU.clock_t;
+		if(getchar() == 27) {
+			break;
+		} 
+	}
 }
 
 short int gb_instr_value(unsigned short int addr) {
@@ -86,7 +97,7 @@ short int gb_instr_value(unsigned short int addr) {
 	unsigned char code_len = OPCODE_LEN[op_code];
 	unsigned char *line =  &GB_MEMORY[addr];
 	short int value = 0;
-	
+
 	switch(code_len) {
 		case 1:
 			break;
@@ -107,6 +118,15 @@ short int gb_instr_value(unsigned short int addr) {
 	}
 
 	return value;
+}
+
+void gb_dump_cpu() {
+	printf("Reg: A=$%02x F=$%02x B=$%02x C=$%02x D=$%02x E=$%02x H=$%02x L=$%02x SP=$%04x PC=$%04x\n",
+		CPU.r.a, CPU.r.f, CPU.r.b, CPU.r.c, CPU.r.d, CPU.r.e, CPU.r.h, CPU.r.l, CPU.r.sp, CPU.r.pc       
+	);
+
+	printf("Flags: z=%d n=%d h=%d c=%d\n",
+		CPU.flags.z, CPU.flags.n, CPU.flags.h, CPU.flags.c );
 }
 
 void gb_disassm_instr(unsigned short int addr) {
@@ -169,70 +189,209 @@ void (*GB_OPCODE_INSTR[])(void) = {
 };
 
 void op_nop_00(){}
-void op_ld_bc_d_01(){}
+
+// -----------
+
+void op_ld_bc_d_01(){
+    CPU.r.b = GB_MEMORY[CPU.r.pc+2];
+    CPU.r.c = GB_MEMORY[CPU.r.pc+1];
+    CPU.clock_t = 12;
+    CPU.r.pc += 3;
+}
+void op_ld_de_x_11(){
+    CPU.r.d = GB_MEMORY[CPU.r.pc+2];
+    CPU.r.e = GB_MEMORY[CPU.r.pc+1];
+    CPU.clock_t = 12;
+    CPU.r.pc += 3;
+}
+void op_ld_hl_x_21(){
+    CPU.r.h = GB_MEMORY[CPU.r.pc+2];
+    CPU.r.l = GB_MEMORY[CPU.r.pc+1];
+    CPU.clock_t = 12;
+    CPU.r.pc += 3;
+}
+void op_ld_sp_x_31(){
+    CPU.r.sp = GB_MEMORY[CPU.r.pc+1];
+    CPU.r.sp |= GB_MEMORY[CPU.r.pc+2] << 8;
+    CPU.clock_t = 12;
+    CPU.r.pc += 3;
+}
+
+// -----------
+
+void op_ld_b_d_06(){
+	CPU.r.b = GB_MEMORY[CPU.r.pc+1];
+    CPU.clock_t = 8;
+    CPU.r.pc += 2;
+}
+void op_ld_c_x_0e(){
+	CPU.r.c = GB_MEMORY[CPU.r.pc+1];
+    CPU.clock_t = 8;
+    CPU.r.pc += 2;
+}
+void op_ld_d_x_16(){
+	CPU.r.d = GB_MEMORY[CPU.r.pc+1];
+    CPU.clock_t = 8;
+    CPU.r.pc += 2;
+}
+void op_ld_e_x_1e(){
+	CPU.r.e = GB_MEMORY[CPU.r.pc+1];
+    CPU.clock_t = 8;
+    CPU.r.pc += 2;
+}
+void op_ld_h_x_26(){
+	CPU.r.h = GB_MEMORY[CPU.r.pc+1];
+    CPU.clock_t = 8;
+    CPU.r.pc += 2;
+}
+void op_ld_l_x_2e(){
+	CPU.r.l = GB_MEMORY[CPU.r.pc+1];
+    CPU.clock_t = 8;
+    CPU.r.pc += 2;
+}
+
+// -----------
+
+void op_ld_hl_a_32(){
+	GB_MEMORY[((_cpu_registers16b*)(&CPU.r))->hl] = CPU.r.a;
+	((_cpu_registers16b*)(&CPU.r))->hl--;
+	CPU.clock_t = 8;
+	CPU.r.pc += 1;
+}
+
+// -----------
+
+void op_dec_a_3d(){
+	CPU.r.a = (CPU.r.a - 1) & 0xff;
+	CPU.flags.h  = ((CPU.r.a & 0x0f) == 0x0f);
+	CPU.flags.z  = CPU.r.a == 0;
+    CPU.flags.n  = 1;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_dec_b_05(){
+	CPU.r.b = (CPU.r.b - 1) & 0xff;
+	CPU.flags.h  = ((CPU.r.b & 0x0f) == 0x0f);
+	CPU.flags.z  = CPU.r.b == 0;
+    CPU.flags.n  = 1;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_dec_c_0d(){
+	CPU.r.c = (CPU.r.c - 1) & 0xff;
+	CPU.flags.h  = ((CPU.r.c & 0x0f) == 0x0f);
+	CPU.flags.z  = CPU.r.c == 0;
+    CPU.flags.n  = 1;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_dec_d_15(){
+	CPU.r.d = (CPU.r.d - 1) & 0xff;
+	CPU.flags.h  = ((CPU.r.d & 0x0f) == 0x0f);
+	CPU.flags.z  = CPU.r.d == 0;
+    CPU.flags.n  = 1;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_dec_e_1d(){
+	CPU.r.e = (CPU.r.e - 1) & 0xff;
+	CPU.flags.h  = ((CPU.r.e & 0x0f) == 0x0f);
+	CPU.flags.z  = CPU.r.e == 0;
+    CPU.flags.n  = 1;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_dec_h_25(){
+	CPU.r.h = (CPU.r.h - 1) & 0xff;
+	CPU.flags.h  = ((CPU.r.h & 0x0f) == 0x0f);
+	CPU.flags.z  = CPU.r.h == 0;
+    CPU.flags.n  = 1;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_dec_hl_35(){
+	uint8_t *cell = &GB_MEMORY[((_cpu_registers16b*)(&CPU.r))->hl];
+
+	*cell = (*cell - 1) & 0xff;
+	CPU.flags.h  = ((*cell & 0x0f) == 0x0f);
+	CPU.flags.z  = *cell == 0;
+    CPU.flags.n  = 1;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+
+// -----------
+void op_dec_bc_0b(){}
+void op_dec_de_1b(){}
+void op_dec_hl_2b(){}
+void op_dec_sp_3b(){}
+// -----------
+
+
 void op_ld_bc_a_02(){}
+
+void op_ld_x_sp_08(){}
+void op_ld_a_bc_0a(){}
+
+void op_ld_de_a_12(){}
+
+void op_ld_a_de_1a(){}
+
+void op_ld_hl_a_22(){}
+
+
 void op_inc_bc_03(){}
 void op_inc_b_04(){}
-void op_dec_b_05(){}
-void op_ld_b_d_06(){}
-void op_rlca_07(){}
-void op_ld_x_sp_08(){}
-void op_add_hl_bc_09(){}
-void op_ld_a_bc_0a(){}
-void op_dec_bc_0b(){}
 void op_inc_c_0c(){}
-void op_dec_c_0d(){}
-void op_ld_c_x_0e(){}
-void op_rrca_0f(){}
-
-void op_stop_10(){}
-void op_ld_de_x_11(){}
-void op_ld_de_a_12(){}
 void op_inc_de_13(){}
 void op_inc_d_14(){}
-void op_dec_d_15(){}
-void op_ld_d_x_16(){}
-void op_rla_17(){}
-void op_jr_x_18(){}
-void op_add_hl_de_19(){}
-void op_ld_a_de_1a(){}
-void op_dec_de_1b(){}
 void op_inc_e_1c(){}
-void op_dec_e_1d(){}
-void op_ld_e_x_1e(){}
-void op_rra_1f(){}
-
-void op_jr_nz_x_20(){}
-void op_ld_hl_x_21(){}
-void op_ld_hl_a_22(){}
 void op_inc_hl_23(){}
 void op_inc_h_24(){}
-void op_dec_h_25(){}
-void op_ld_h_x_26(){}
+
+
+
+void op_rlca_07(){}
+void op_rrca_0f(){}
+void op_rla_17(){}
+void op_rra_1f(){}
+
+void op_add_hl_bc_09(){}
+
+void op_stop_10(){}
+
+
+void op_jr_x_18(){}
+void op_jr_nz_x_20(){}
+
+void op_add_hl_de_19(){}
+
+
+
+
+
+
 void op_daa_27(){}
+
 void op_jr_z_x_28(){}
 void op_add_hl_hl_29(){}
 void op_ld_a_hl_2a(){}
-void op_dec_hl_2b(){}
+
 void op_inc_l_2c(){}
 void op_dec_l_2d(){}
-void op_ld_l_x_2e(){}
 void op_cpl_2f(){}
 
 void op_jr_nc_30(){}
-void op_ld_sp_x_31(){}
-void op_ld_hl_a_32(){}
+
 void op_inc_sp_33(){}
 void op_inc_hl_34(){}
-void op_dec_hl_35(){}
+
 void op_ld_hl_x_36(){}
 void op_scf_37(){}
 void op_jr_c_x_38(){}
 void op_add_hl_sp_39(){}
 void op_ld_a_hl_3a(){}
-void op_dec_sp_3b(){}
 void op_inc_a_3c(){}
-void op_dec_a_3d(){}
 void op_ld_a_x_3e(){}
 void op_ccf_3f(){}
 
@@ -353,7 +512,14 @@ void op_xor_e_ab(){}
 void op_xor_h_ac(){}
 void op_xor_l_ad(){}
 void op_xor_hl_ae(){}
-void op_xor_a_af(){}
+void op_xor_a_af(){
+	CPU.clock_t = 4;
+	CPU.r.a ^= CPU.r.a;
+	
+	CPU.flags.c = 0; CPU.flags.h = 0; CPU.flags.n = 0;
+    CPU.flags.z = (CPU.r.a == 0);
+    CPU.r.pc++;
+}
 
 void op_or_b_b0(){}
 void op_or_c_b1(){}
@@ -375,7 +541,14 @@ void op_cp_a_bf(){}
 void op_ret_nz_c0(){}
 void op_pop_bc_c1(){}
 void op_jp_nx_x_c2(){}
-void op_jp_x_c3(){}
+void op_jp_x_c3(){
+	uint16_t addr = 0;
+    addr  = GB_MEMORY[CPU.r.pc+1] ;
+    addr |= GB_MEMORY[CPU.r.pc+2] << 8;
+    CPU.clock_t = 8;
+    //gb_time_update(CPU);
+    CPU.r.pc = addr;
+}
 void op_call_nz_x_c4(){}
 void op_push_bc_c5(){}
 void op_add_a_x_c6(){}

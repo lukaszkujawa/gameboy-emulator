@@ -2,6 +2,8 @@
 
 #define CPU_H
 
+#include <stdint.h>
+
 typedef char* string;
 
 extern char OPCODE_LEN[0x100];
@@ -9,6 +11,8 @@ extern char OPCODE_LEN[0x100];
 extern string OPCODE_STR[0x100];
 
 unsigned char *GB_MEMORY;
+
+void gb_dump_cpu();
 
 void gb_run();
 
@@ -37,26 +41,52 @@ typedef struct
 
 typedef struct
 {
-	unsigned char reg_a;
-	unsigned char reg_b;
-	unsigned char reg_c;
-	unsigned char reg_d;
-	unsigned char reg_e;
-	unsigned char reg_f;
-	unsigned char reg_h;
-	unsigned char reg_l;
-	unsigned short int reg_sp;
-	unsigned short int reg_pc;
+	uint8_t a;
+	uint8_t f;
+	uint8_t b;
+	uint8_t c;
+	uint8_t d;
+	uint8_t e;
+	uint8_t h;
+	uint8_t l;
+	uint16_t sp;
+	uint16_t pc;
+} _cpu_registers;
 
+typedef struct
+{
+	uint16_t af;
+	uint16_t bc;
+	uint16_t de;
+	uint16_t hl;
+	uint16_t sp;
+	uint16_t pc;
+} _cpu_registers16b;
+
+typedef struct
+{
 	/* flags 1bit */
-	unsigned char flag_z; // zero
-	unsigned char flag_n; // substract
-	unsigned char flag_h; // half carry
-	unsigned char flag_c; // carry
+	uint8_t z; // zero
+	uint8_t n; // substract
+	uint8_t h; // half carry
+	uint8_t c; // carry
+} _cpu_flags;
 
-	unsigned char clock_m;
-	unsigned char clock_t;
+typedef struct
+{
+	_cpu_registers r;
+	_cpu_flags flags;
+
+	uint8_t opcode;
+
+	uint8_t clock_m; // machine cycles
+	uint8_t clock_t; // clock cycles
+
+    unsigned long cycles_machine;
+    unsigned long cycles_clock;
 } cpu;
+
+extern cpu CPU;
 
 void op_nop_00();
 void op_ld_bc_d_01();

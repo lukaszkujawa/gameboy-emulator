@@ -21,14 +21,17 @@ cpu:
 disassm:
 	${CC} -c ${SRC}/disassm.c -o ${TARGET}/disassm.o
 
+time:
+	${CC} -c ${SRC}/time.c -o ${TARGET}/time.o
+
 emulator:
 	${CC} -c ${SRC}/emulator.c -o ${TARGET}/emulator.o
 
 disassm_bin:
-	${CC} ${TARGET}/disassm.o ${TARGET}/cpu.o -o ${BINDIR}/disassm
+	${CC} ${TARGET}/disassm.o ${TARGET}/time.o ${TARGET}/cpu.o -o ${BINDIR}/disassm
 
 emulator_bin:
-	${CC} ${TARGET}/emulator.o ${TARGET}/cpu.o -o ${BINDIR}/emulator
+	${CC} ${TARGET}/emulator.o ${TARGET}/time.o ${TARGET}/cpu.o -o ${BINDIR}/emulator
 
 
-all: dirs cpu disassm disassm_bin emulator emulator_bin
+all: dirs cpu time disassm disassm_bin emulator emulator_bin
