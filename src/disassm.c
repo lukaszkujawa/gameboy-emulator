@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "cpu.h"
+#include "debug.h"
 
 int main(int argc, char *argv[]){
 	if(argc != 2) {
@@ -27,7 +28,7 @@ int main(int argc, char *argv[]){
 	while(1) {
 		unsigned char op_code = GB_MEMORY[i];
 		unsigned char code_len = OPCODE_LEN[op_code];
-		gb_disassm_instr(i);
+		debug_disassm_instr(i);
 		short int value = gb_instr_value(i);
 
 		switch(op_code) {

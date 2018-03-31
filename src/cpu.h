@@ -10,18 +10,13 @@ extern char OPCODE_LEN[0x100];
 
 extern string OPCODE_STR[0x100];
 
-uint8_t *GB_MEMORY;
-
-void gb_dump_cpu();
+extern uint8_t *GB_MEMORY;
 
 void gb_run();
 
 void gb_init();
 
 void gb_load_rom(char * game_path);
-
-void gb_disassm_instr(uint16_t addr);
-void gb_disassm_instr_n(uint16_t addr, uint16_t n);
 
 short int gb_instr_value(unsigned short int addr);
 
