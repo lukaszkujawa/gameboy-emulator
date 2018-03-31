@@ -49,6 +49,10 @@ gb_rom_header *ROM_HEADER;
 
 cpu CPU;
 
+uint16_t debug_breaks[128];
+uint8_t debug_break_i = 0;
+uint8_t debug_pause = 0;
+
 void gb_init() {
 	GB_MEMORY = malloc(0xFFFF);
 }
@@ -78,17 +82,76 @@ void gb_reset() {
 	memset(&CPU, 0, sizeof(cpu));
 }
 
+void _gb_debug() {
+	char *str = NULL;
+	size_t len;
+	uint16_t addr = 0;
 
-void gb_run() {
+	for(int i = 0 ; i < debug_break_i ; i++) {
+		if(debug_breaks[i] == CPU.r.pc) {
+			printf("at break $%04x\n", debug_breaks[i]);
+			debug_pause = 1;
+			break;
+		}
+	}
+
+	gb_disassm_instr(CPU.r.pc);
+
+	if(debug_pause == 0) {
+		return;
+	}
+		
+	while(1) {
+		printf("(debug) ");
+		getline(&str, &len, stdin);
+		
+		if(str[0] == 'q') {
+			exit(1);
+		}
+
+		if(str[0] == 'c') {
+			debug_pause = 0;
+			break;
+		}
+
+		if(str[0] == 'd') {
+			gb_disassm_instr_n(CPU.r.pc, (uint16_t)7);
+		}
+
+		if(strcmp(str, "reg\n") == 0) {
+			gb_dump_cpu();
+		}
+
+		if(sscanf(str, "b $%04x\n", &addr)) {
+			printf("setting break at $%04x\n", addr);
+			debug_breaks[debug_break_i] = addr;
+			debug_break_i++;
+		}
+
+		if(str[0] == 'n') {
+			break;
+		}
+	}
+}
+
+void gb_run(int debug) {
+	if(debug == 1) {
+		debug_breaks[debug_break_i] = 0x0100;
+		debug_break_i++;
+		debug_pause = 1;
+	}
+
 	while(1) {
 		CPU.opcode = GB_MEMORY[CPU.r.pc];
-		gb_disassm_instr(CPU.r.pc);
-		GB_OPCODE_INSTR[CPU.opcode]();
-		gb_dump_cpu();
+		if(debug == 1) {
+			_gb_debug();
+		}
+		
+		GB_OPCODE_INSTR[CPU.opcode](); // run instruction
+		
 		CPU.cycles_clock += CPU.clock_t;
-		if(getchar() == 27) {
-			break;
-		} 
+		
+
 	}
 }
 
@@ -121,15 +184,40 @@ short int gb_instr_value(unsigned short int addr) {
 }
 
 void gb_dump_cpu() {
-	printf("Reg: A=$%02x F=$%02x B=$%02x C=$%02x D=$%02x E=$%02x H=$%02x L=$%02x SP=$%04x PC=$%04x\n",
-		CPU.r.a, CPU.r.f, CPU.r.b, CPU.r.c, CPU.r.d, CPU.r.e, CPU.r.h, CPU.r.l, CPU.r.sp, CPU.r.pc       
+	printf("  A=$%02x  AF=$%04x\n  F=$%02x \n  B=$%02x  BC=$%04x\n  C=$%02x \n  D=$%02x  DE=$%04x\n  E=$%02x \n  H=$%02x  HL=$%04x\n  L=$%02x \n  SP=$%04x \n  PC=$%04x \n",
+		CPU.r.a,
+		((_cpu_registers16b*)(&CPU.r))->af, 
+		CPU.r.f, 
+		CPU.r.b, 
+		((_cpu_registers16b*)(&CPU.r))->bc,
+		CPU.r.c, 
+		CPU.r.d,
+		((_cpu_registers16b*)(&CPU.r))->de, 
+		CPU.r.e, 
+		CPU.r.h, 
+		((_cpu_registers16b*)(&CPU.r))->hl,
+		CPU.r.l, 
+		CPU.r.sp, 
+		CPU.r.pc       
 	);
 
-	printf("Flags: z=%d n=%d h=%d c=%d\n",
+	printf("  z=%d \n  n=%d \n  h=%d \n  c=%d\n",
 		CPU.flags.z, CPU.flags.n, CPU.flags.h, CPU.flags.c );
 }
 
-void gb_disassm_instr(unsigned short int addr) {
+
+void gb_disassm_instr_n(uint16_t addr, uint16_t n) {
+	for(; n > 0 ;n--){
+		uint8_t op_code = GB_MEMORY[addr];
+		uint8_t code_len = OPCODE_LEN[op_code];
+
+		gb_disassm_instr(addr);
+		addr += code_len;
+	}
+}
+
+
+void gb_disassm_instr(uint16_t addr) {
 	unsigned char op_code = GB_MEMORY[addr];
 	unsigned char code_len = OPCODE_LEN[op_code];
 	unsigned char *line =  &GB_MEMORY[addr];
@@ -188,7 +276,10 @@ void (*GB_OPCODE_INSTR[])(void) = {
 	op_ldh_a_x_f0, op_pop_af_f1, op_ld_a_c_f2, op_di_f3, op_unknown_f4, op_push_hf_f5, op_or_x_f6, op_rst_30h_f7, op_ld_hl_sp_x_f8, op_ld_sp_hl_f9, op_ld_a_x_fa, op_ei_fb, op_unknown_fc, op_unknown_fd, op_cp_x_fe, op_rst_38h_ff
 };
 
-void op_nop_00(){}
+void op_nop_00(){
+	CPU.clock_t = 4;
+    CPU.r.pc += 1;
+}
 
 // -----------
 
@@ -249,6 +340,11 @@ void op_ld_l_x_2e(){
     CPU.clock_t = 8;
     CPU.r.pc += 2;
 }
+
+// -----------
+
+void op_ld_a_x_3e(){}
+
 
 // -----------
 
@@ -328,6 +424,51 @@ void op_dec_sp_3b(){}
 // -----------
 
 
+void op_jr_nz_x_20(){
+	if(CPU.flags.z == 0) {
+		CPU.r.pc +=  2 + (int8_t) GB_MEMORY[CPU.r.pc+1];
+	}
+	else {
+		CPU.r.pc += 2;
+	}
+
+	CPU.clock_t = 8;
+}
+void op_jr_z_x_28(){
+	if(CPU.flags.z == 1) {
+		CPU.r.pc += 2 + (int8_t) GB_MEMORY[CPU.r.pc+1];
+	}
+	else {
+		CPU.r.pc += 2;
+	}
+	
+	CPU.clock_t = 8;
+}
+void op_jr_nc_30(){
+	if(CPU.flags.c == 0) {
+		CPU.r.pc += 2+ (int8_t) GB_MEMORY[CPU.r.pc+1];
+	}
+	else {
+		CPU.r.pc += 2;
+	}
+	
+	CPU.clock_t = 8;
+}
+void op_jr_c_x_38(){
+	if(CPU.flags.c == 1) {
+		CPU.r.pc += 2 + (int8_t) GB_MEMORY[CPU.r.pc+1];
+	}
+	else {
+		CPU.r.pc += 2;
+	}
+	
+	CPU.clock_t = 8;
+}
+
+// -----------
+
+void op_jr_x_18(){}
+
 void op_ld_bc_a_02(){}
 
 void op_ld_x_sp_08(){}
@@ -361,8 +502,7 @@ void op_add_hl_bc_09(){}
 void op_stop_10(){}
 
 
-void op_jr_x_18(){}
-void op_jr_nz_x_20(){}
+
 
 void op_add_hl_de_19(){}
 
@@ -373,7 +513,7 @@ void op_add_hl_de_19(){}
 
 void op_daa_27(){}
 
-void op_jr_z_x_28(){}
+
 void op_add_hl_hl_29(){}
 void op_ld_a_hl_2a(){}
 
@@ -381,18 +521,18 @@ void op_inc_l_2c(){}
 void op_dec_l_2d(){}
 void op_cpl_2f(){}
 
-void op_jr_nc_30(){}
+
 
 void op_inc_sp_33(){}
 void op_inc_hl_34(){}
 
 void op_ld_hl_x_36(){}
 void op_scf_37(){}
-void op_jr_c_x_38(){}
+
 void op_add_hl_sp_39(){}
 void op_ld_a_hl_3a(){}
 void op_inc_a_3c(){}
-void op_ld_a_x_3e(){}
+
 void op_ccf_3f(){}
 
 void op_ld_b_b_40(){}

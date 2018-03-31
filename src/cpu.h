@@ -10,7 +10,7 @@ extern char OPCODE_LEN[0x100];
 
 extern string OPCODE_STR[0x100];
 
-unsigned char *GB_MEMORY;
+uint8_t *GB_MEMORY;
 
 void gb_dump_cpu();
 
@@ -20,22 +20,23 @@ void gb_init();
 
 void gb_load_rom(char * game_path);
 
-void gb_disassm_instr(unsigned short int addr);
+void gb_disassm_instr(uint16_t addr);
+void gb_disassm_instr_n(uint16_t addr, uint16_t n);
 
 short int gb_instr_value(unsigned short int addr);
 
 typedef struct  
 {
 	unsigned char title[14];
-	unsigned char color;
-	unsigned short int license;
-	unsigned char device;
-	unsigned char catridge_type;
-	unsigned char rom_size;
-	unsigned char ram_size;
-	unsigned char dest;
-	unsigned char license_code;
-	unsigned char rom_ver;
+	uint8_t color;
+	uint16_t license;
+	uint8_t device;
+	uint8_t catridge_type;
+	uint8_t rom_size;
+	uint8_t ram_size;
+	uint8_t dest;
+	uint8_t license_code;
+	uint8_t rom_ver;
 
 } gb_rom_header;
 

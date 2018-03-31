@@ -12,7 +12,8 @@ int main(int argc, char *argv[]) {
 
 	gb_init();
 	gb_load_rom(argv[1]);
-	gb_run();
+	CPU.r.pc = 0x100;
+	gb_run(1);
 
 	return 0;
 }
