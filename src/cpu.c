@@ -51,6 +51,7 @@ gb_rom_header *ROM_HEADER;
 cpu CPU;
 
 void gb_init() {
+	CPU.r.pc = 0x100;
 	GB_MEMORY = malloc(0xFFFF);
 }
 
@@ -218,19 +219,198 @@ void op_ld_l_x_2e(){
 
 // MOV A, nn -----------
 
-void op_ld_a_a_7f(){}
-void op_ld_a_x_3e(){}
-void op_ld_a_b_78(){}
-void op_ld_a_c_79(){}
-void op_ld_a_d_7a(){}
-void op_ld_a_e_7b(){}
-void op_ld_a_h_7c(){}
-void op_ld_a_l_7d(){}
-void op_ld_a_hl_7e(){}
-void op_ld_a_bc_0a(){}
-void op_ld_a_de_1a(){}
-void op_ld_a_x_fa(){}
-
+void op_ld_a_a_7f(){
+	CPU.r.a = CPU.r.a;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_a_b_78(){
+	CPU.r.a = CPU.r.b;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_a_c_79(){
+	CPU.r.a = CPU.r.c;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_a_d_7a(){
+	CPU.r.a = CPU.r.d;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_a_e_7b(){
+	CPU.r.a = CPU.r.e;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_a_h_7c(){
+	CPU.r.a = CPU.r.h;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_a_l_7d(){
+	CPU.r.a = CPU.r.l;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_a_hl_7e(){
+	CPU.r.a = memory_read_u8(((_cpu_registers16b*)(&CPU.r))->hl);
+	CPU.clock_t = 8;
+	CPU.r.pc += 1;
+}
+void op_ld_a_bc_0a(){
+	CPU.r.a = memory_read_u8(((_cpu_registers16b*)(&CPU.r))->bc);
+	CPU.clock_t = 8;
+	CPU.r.pc += 1;
+}
+void op_ld_a_de_1a(){
+	CPU.r.a = memory_read_u8(((_cpu_registers16b*)(&CPU.r))->de);
+	CPU.clock_t = 8;
+	CPU.r.pc += 1;
+}
+void op_ld_a_x_fa(){
+	CPU.r.a = memory_read_u8(CPU.r.pc+1);
+    CPU.r.a |= memory_read_u8(CPU.r.pc+2) << 8;
+	CPU.clock_t = 16;
+	CPU.r.pc += 3;
+}
+void op_ld_a_x_3e(){
+	CPU.r.a = memory_read_u8(CPU.r.pc+1);
+	CPU.clock_t = 16;
+	CPU.r.pc += 8;
+}
+// mov b, r-----------
+void op_ld_b_b_40(){
+	CPU.r.b = CPU.r.b;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_b_c_41(){
+	CPU.r.b = CPU.r.c;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_b_d_42(){
+	CPU.r.b = CPU.r.d;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_b_e_43(){
+	CPU.r.b = CPU.r.e;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_b_h_44(){
+	CPU.r.b = CPU.r.h;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_b_l_45(){
+	CPU.r.b = CPU.r.l;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_b_hl_46(){
+	CPU.r.b = memory_read_u8(((_cpu_registers16b*)(&CPU.r))->hl);
+	CPU.clock_t = 8;
+	CPU.r.pc += 1;
+}
+void op_ld_b_a_47(){
+	CPU.r.b = CPU.r.a;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_b_h_54(){
+	CPU.r.b = CPU.r.h;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+// mov c, r-----------
+void op_ld_c_b_48(){
+	CPU.r.c = CPU.r.b;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_c_c_49(){
+	CPU.r.c = CPU.r.c;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_c_d_4a(){
+	CPU.r.c = CPU.r.d;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_c_e_4b(){
+	CPU.r.c = CPU.r.e;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_c_h_4c(){
+	CPU.r.c = CPU.r.h;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_c_l_4d(){
+	CPU.r.c = CPU.r.l;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+void op_ld_c_hl_4e(){
+	CPU.r.c = memory_read_u8(((_cpu_registers16b*)(&CPU.r))->hl);
+	CPU.clock_t = 8;
+	CPU.r.pc += 1;
+}
+void op_ld_c_a_4f(){
+	CPU.r.c = CPU.r.a;
+	CPU.clock_t = 4;
+	CPU.r.pc += 1;
+}
+// mov d, r-----------
+void op_ld_d_b_50(){}
+void op_ld_d_c_51(){}
+void op_ld_d_d_52(){}
+void op_ld_d_e_53(){}
+void op_ld_d_l_55(){}
+void op_ld_d_hl_56(){}
+void op_ld_d_a_57(){}
+// mov e, r-----------
+void op_ld_e_b_58(){}
+void op_ld_e_c_59(){}
+void op_ld_e_d_5a(){}
+void op_ld_e_e_5b(){}
+void op_ld_e_h_5c(){}
+void op_ld_e_l_5d(){}
+void op_ld_e_hl_5e(){}
+void op_ld_e_a_5f(){}
+// mov h, r-----------
+void op_ld_h_b_60(){}
+void op_ld_h_c_61(){}
+void op_ld_h_d_62(){}
+void op_ld_h_e_63(){}
+void op_ld_h_h_64(){}
+void op_ld_h_l_65(){}
+void op_ld_h_hl_66(){}
+void op_ld_h_a_67(){}
+// mov l, r-----------
+void op_ld_l_b_68(){}
+void op_ld_l_c_69(){}
+void op_ld_l_d_6a(){}
+void op_ld_l_e_6b(){}
+void op_ld_l_h_6c(){}
+void op_ld_l_l_6d(){}
+void op_ld_l_hl_6e(){}
+void op_ld_l_a_6f(){}
+// mov (hl), r-----------
+void op_ld_hl_b_70(){}
+void op_ld_hl_c_71(){}
+void op_ld_hl_d_72(){}
+void op_ld_hl_e_73(){}
+void op_ld_hl_h_74(){}
+void op_ld_hl_l_75(){}
+void op_ld_hl_hl_76(){}
+void op_ld_hl_a_77(){}
 // -----------
 
 void op_ld_hl_a_32(){
@@ -425,65 +605,12 @@ void op_inc_a_3c(){}
 
 void op_ccf_3f(){}
 
-void op_ld_b_b_40(){}
-void op_ld_b_c_41(){}
-void op_ld_b_d_42(){}
-void op_ld_b_e_43(){}
-void op_ld_b_h_44(){}
-void op_ld_b_l_45(){}
-void op_ld_b_hl_46(){}
-void op_ld_b_a_47(){}
-void op_ld_c_b_48(){}
-void op_ld_c_c_49(){}
-void op_ld_c_d_4a(){}
-void op_ld_c_e_4b(){}
-void op_ld_c_h_4c(){}
-void op_ld_c_l_4d(){}
-void op_ld_c_hl_4e(){}
-void op_ld_c_a_4f(){}
 
-void op_ld_d_b_50(){}
-void op_ld_d_c_51(){}
-void op_ld_d_d_52(){}
-void op_ld_d_e_53(){}
-void op_ld_b_h_54(){}
-void op_ld_d_l_55(){}
-void op_ld_d_hl_56(){}
-void op_ld_d_a_57(){}
-void op_ld_e_b_58(){}
-void op_ld_e_c_59(){}
-void op_ld_e_d_5a(){}
-void op_ld_e_e_5b(){}
-void op_ld_e_h_5c(){}
-void op_ld_e_l_5d(){}
-void op_ld_e_hl_5e(){}
-void op_ld_e_a_5f(){}
 
-void op_ld_h_b_60(){}
-void op_ld_h_c_61(){}
-void op_ld_h_d_62(){}
-void op_ld_h_e_63(){}
-void op_ld_h_h_64(){}
-void op_ld_h_l_65(){}
-void op_ld_h_hl_66(){}
-void op_ld_h_a_67(){}
-void op_ld_l_b_68(){}
-void op_ld_l_c_69(){}
-void op_ld_l_d_6a(){}
-void op_ld_l_e_6b(){}
-void op_ld_l_h_6c(){}
-void op_ld_l_l_6d(){}
-void op_ld_l_hl_6e(){}
-void op_ld_l_a_6f(){}
 
-void op_ld_hl_b_70(){}
-void op_ld_hl_c_71(){}
-void op_ld_hl_d_72(){}
-void op_ld_hl_e_73(){}
-void op_ld_hl_h_74(){}
-void op_ld_hl_l_75(){}
-void op_ld_hl_hl_76(){}
-void op_ld_hl_a_77(){}
+
+
+
 
 
 void op_add_a_b_80(){}
