@@ -36,6 +36,7 @@ void debug_debug() {
 	char *str = NULL;
 	size_t len;
 	uint16_t addr = 0;
+	int val = 4;
 
 	for(int i = 0 ; i < debug_break_i ; i++) {
 		if(debug_breaks[i] == CPU.r.pc) {
@@ -70,6 +71,15 @@ void debug_debug() {
 
 		if(strcmp(str, "reg\n") == 0) {
 			debug_dump_cpu();
+		}
+
+		if(sscanf(str, "x $%4hx/%d\n", &addr, &val)) {
+			for(int i = 0 ; i < val ; i++) {
+				printf("$%02x ", GB_MEMORY[addr+i]);
+				if(i % 8 == 7) printf("\n");
+			}
+			printf("\n");
+			val = 4;
 		}
 
 		if(sscanf(str, "b $%4hx\n", &addr)) {
