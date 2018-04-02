@@ -1,7 +1,8 @@
-CC=gcc
+CC=clang
 SRC=./src
 TARGET=./build
 BINDIR=./bin
+LDFLAGS=-framework SDL2
 FLAGS=
 
 default_target: all
@@ -15,6 +16,9 @@ clean:
 dirs:
 	mkdir -p ${BINDIR}
 	mkdir -p ${TARGET}	
+
+gpu:
+	${CC} ${FLAGS} -I/Library/Frameworks/SDL2.framework/Headers -c ${SRC}/gpu.c -o ${TARGET}/gpu.o
 
 cpu:
 	${CC} ${FLAGS} -c ${SRC}/cpu.c -o ${TARGET}/cpu.o
@@ -34,11 +38,10 @@ memory:
 emulator:
 	${CC} ${FLAGS} -c ${SRC}/emulator.c -o ${TARGET}/emulator.o
 
-disassm_bin:
-	${CC} ${FLAGS} ${FLAGS} ${TARGET}/memory.o ${TARGET}/debug.o ${TARGET}/disassm.o ${TARGET}/time.o ${TARGET}/cpu.o -o ${BINDIR}/disassm
-
 emulator_bin:
-	${CC} ${FLAGS} ${TARGET}/memory.o ${TARGET}/debug.o ${TARGET}/emulator.o ${TARGET}/time.o ${TARGET}/cpu.o -o ${BINDIR}/emulator
+	${CC} ${FLAGS} ${LDFLAGS} ${TARGET}/gpu.o ${TARGET}/memory.o ${TARGET}/debug.o ${TARGET}/emulator.o ${TARGET}/time.o ${TARGET}/cpu.o -o ${BINDIR}/emulator
 
 
-all: dirs memory debug cpu time disassm disassm_bin emulator emulator_bin
+all: gpu dirs memory debug cpu time emulator emulator_bin
+
+

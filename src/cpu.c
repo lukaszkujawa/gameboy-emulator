@@ -7,6 +7,7 @@
 #include "time.h"
 #include "debug.h"
 #include "memory.h"
+#include "gpu.h"
 
 string OPCODE_STR[0x100] = {
 	"nop", 		"ld bc, %d", 	"ld (bc), a", 	"inc bc", "inc b", 		"dec b", 	"ld b,%d", 		"rlca", 	"ld ($%04x),sp", 	"add hl,bc", 	"ld a,(bc)", 	"dec bc", 	"inc c", 	"dec c", 	"ld c, %d", 		"rrca",
@@ -99,6 +100,7 @@ void gb_run(int debug) {
 		
 		CPU.cycles_clock += CPU.clock_t;
 		
+		gpu_step();
 
 	}
 }
@@ -158,7 +160,7 @@ void (*GB_OPCODE_INSTR[])(void) = {
 	op_ld_b_b_40, op_ld_b_c_41, op_ld_b_d_42, op_ld_b_e_43, op_ld_b_h_44, op_ld_b_l_45, op_ld_b_hl_46, op_ld_b_a_47, op_ld_c_b_48, op_ld_c_c_49, op_ld_c_d_4a, op_ld_c_e_4b, op_ld_c_h_4c, op_ld_c_l_4d, op_ld_c_hl_4e, op_ld_c_a_4f, 
 	op_ld_d_b_50, op_ld_d_c_51, op_ld_d_d_52, op_ld_d_e_53, op_ld_b_h_54, op_ld_d_l_55, op_ld_d_hl_56, op_ld_d_a_57, op_ld_e_b_58, op_ld_e_c_59, op_ld_e_d_5a, op_ld_e_e_5b, op_ld_e_h_5c, op_ld_e_l_5d, op_ld_e_hl_5e, op_ld_e_a_5f, 
 	op_ld_h_b_60, op_ld_h_c_61, op_ld_h_d_62, op_ld_h_e_63, op_ld_h_h_64, op_ld_h_l_65, op_ld_h_hl_66, op_ld_h_a_67, op_ld_l_b_68, op_ld_l_c_69, op_ld_l_d_6a, op_ld_l_e_6b, op_ld_l_h_6c, op_ld_l_l_6d, op_ld_l_hl_6e, op_ld_l_a_6f, 
-	op_ld_hl_b_70, op_ld_hl_c_71, op_ld_hl_d_72, op_ld_hl_e_73, op_ld_hl_h_74, op_ld_hl_l_75, op_ld_halt_76, op_ld_hl_a_77, op_ld_a_b_78, op_ld_a_c_79, op_ld_a_d_7a, op_ld_a_e_7b, op_ld_a_h_7c, op_ld_a_l_7d, op_ld_a_hl_7e, op_ld_a_a_7f, 
+	op_ld_hl_b_70, op_ld_hl_c_71, op_ld_hl_d_72, op_ld_hl_e_73, op_ld_hl_h_74, op_ld_hl_l_75, op_halt_76, op_ld_hl_a_77, op_ld_a_b_78, op_ld_a_c_79, op_ld_a_d_7a, op_ld_a_e_7b, op_ld_a_h_7c, op_ld_a_l_7d, op_ld_a_hl_7e, op_ld_a_a_7f, 
 	op_add_a_b_80, op_add_a_c_81, op_add_a_d_82, op_add_a_e_83, op_add_a_h_84, op_add_a_l_85, op_add_a_hl_86, op_add_a_a_87, op_adc_a_b_88, op_adc_a_c_89, op_adc_a_d_8a, op_adc_a_e_8b, op_adc_a_h_8c, op_adc_a_l_8d, op_adc_a_hl_8e, op_adc_a_a_8f, 
 	op_sub_b_90, op_sub_c_91, op_sub_d_92, op_sub_e_93, op_sub_h_94, op_sub_l_95, op_sub_hl_96, op_sub_a_97, op_sbc_a_b_98, op_sbc_a_c_99, op_sbc_a_d_9a, op_sbc_a_e_9b, op_sbc_a_h_9c, op_sbc_a_l_9d, op_sbc_a_hl_9e, op_sbc_a_a_9f, 
 	op_and_b_a0, op_and_c_a1, op_and_d_a2, op_and_e_a3, op_and_h_a4, op_and_l_a5, op_and_hl_a6, op_and_a_a7, op_xor_b_a8, op_xor_c_a9, op_xor_d_aa, op_xor_e_ab, op_xor_h_ac, op_xor_l_ad, op_xor_hl_ae, op_xor_a_af, 
@@ -168,6 +170,7 @@ void (*GB_OPCODE_INSTR[])(void) = {
 	op_ldh_x_a_e0, op_pop_hl_e1, op_ld_c_a_e2, op_unknown_e3, op_unknown_e4, op_push_hl_e5, op_and_x_e6, op_rst_20h_e7, op_add_sp_x_e8, op_jp_hl_e9, op_ld_x_a_ea, op_unknown_eb, op_unknown_ec, op_unknown_ed, op_xor_x_ee, op_rst_28h_ef, 
 	op_ldh_a_x_f0, op_pop_af_f1, op_ld_a_c_f2, op_di_f3, op_unknown_f4, op_push_hf_f5, op_or_x_f6, op_rst_30h_f7, op_ld_hl_sp_x_f8, op_ld_sp_hl_f9, op_ld_a_x_fa, op_ei_fb, op_unknown_fc, op_unknown_fd, op_cp_x_fe, op_rst_38h_ff
 };
+
 
 
 // TODO
@@ -192,8 +195,7 @@ void op_nop_00(){
 
 // -----------
 
-void op_ld_bc_d_01(){
-
+void op_ld_bc_d_01() {
     CPU.r.b = memory_read_u8(CPU.r.pc+2);
     CPU.r.c = memory_read_u8(CPU.r.pc+1);
     CPU.clock_t = 12;
@@ -680,7 +682,7 @@ void op_dec_hl_2b(){}
 void op_dec_sp_3b(){}
 // -----------
 
-void op_ld_halt_76(){}
+void op_halt_76(){}
 
 void op_jr_nz_x_20(){
 	if(CPU.flags.z == 0) {
@@ -921,6 +923,38 @@ void op_cp_x_fe(){
 }
 // ----------
 
+void op_ld_hl_sp_x_f8(){
+	int8_t n = (int8_t) memory_read_u8(CPU.r.pc+1);
+	uint16_t addr = CPU.r.sp + n;
+	CPU.r.h = (addr >> 8) & 0xFF;
+	CPU.r.l = addr & 0xFF;
+	CPU.flags.z = 0;
+	CPU.flags.n = 0;
+
+	CPU.flags.c = (uint16_t)(CPU.r.sp & 0xFF) + n > 0xFF;
+	CPU.flags.h = halfcarry((uint8_t)(CPU.r.sp & 0xFF), (uint8_t)n, (uint8_t)(CPU.r.sp & 0xFF) + n);
+	CPU.flags.h = 0;
+	CPU.flags.c = 0;
+
+	CPU.clock_t = 16;
+	CPU.r.pc += OPCODE_LEN[CPU.opcode];	
+}
+void op_ld_sp_hl_f9(){}
+void op_ld_a_c_f2(){}
+void op_ld_a_hl_2a(){}
+
+void op_ld_a_hl_3a(){}
+void op_ld_c_a_e2(){}
+
+void op_ld_x_a_ea(){}
+void op_ld_x_sp_08(){}
+
+void op_ld_hl_a_22(){}
+void op_ld_hl_x_36(){}
+void op_ld_bc_a_02(){}
+void op_ld_de_a_12(){}
+
+
 
 void op_ldh_x_a_e0(){
 	uint16_t addr = 0xff00;
@@ -940,16 +974,8 @@ void op_ldh_a_x_f0(){
 
 void op_jr_x_18(){}
 
-void op_ld_bc_a_02(){}
-
-void op_ld_x_sp_08(){}
 
 
-void op_ld_de_a_12(){}
-
-
-
-void op_ld_hl_a_22(){}
 
 
 void op_inc_bc_03(){}
@@ -986,7 +1012,7 @@ void op_daa_27(){}
 
 
 void op_add_hl_hl_29(){}
-void op_ld_a_hl_2a(){}
+
 
 void op_inc_l_2c(){}
 void op_dec_l_2d(){}
@@ -997,11 +1023,11 @@ void op_cpl_2f(){}
 void op_inc_sp_33(){}
 void op_inc_hl_34(){}
 
-void op_ld_hl_x_36(){}
+
 void op_scf_37(){}
 
 void op_add_hl_sp_39(){}
-void op_ld_a_hl_3a(){}
+
 void op_inc_a_3c(){}
 
 void op_ccf_3f(){}
@@ -1117,7 +1143,7 @@ void op_sbc_a_x_de(){}
 void op_rst_18h_df(){}
 
 void op_pop_hl_e1(){}
-void op_ld_c_a_e2(){}
+
 void op_unknown_e3(){}
 void op_unknown_e4(){}
 void op_push_hl_e5(){}
@@ -1125,7 +1151,7 @@ void op_and_x_e6(){}
 void op_rst_20h_e7(){}
 void op_add_sp_x_e8(){}
 void op_jp_hl_e9(){}
-void op_ld_x_a_ea(){}
+
 void op_unknown_eb(){}
 void op_unknown_ec(){}
 void op_unknown_ed(){}
@@ -1134,15 +1160,11 @@ void op_rst_28h_ef(){}
 
 
 void op_pop_af_f1(){}
-void op_ld_a_c_f2(){}
 
 void op_unknown_f4(){}
 void op_push_hf_f5(){}
 void op_or_x_f6(){}
 void op_rst_30h_f7(){}
-void op_ld_hl_sp_x_f8(){}
-void op_ld_sp_hl_f9(){}
-
 
 void op_unknown_fc(){}
 void op_unknown_fd(){}

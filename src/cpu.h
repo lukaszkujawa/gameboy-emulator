@@ -209,7 +209,7 @@ void op_ld_hl_d_72();
 void op_ld_hl_e_73();
 void op_ld_hl_h_74();
 void op_ld_hl_l_75();
-void op_ld_halt_76();
+void op_halt_76();
 void op_ld_hl_a_77();
 void op_ld_a_b_78();
 void op_ld_a_c_79();
